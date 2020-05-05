@@ -28,7 +28,7 @@ start
 [prompt command]: <bash command>, q|exit|quit, c|continue
 [wd] /xxx/yyy/zzz
 =================================================================================================================================================================================================
-wget $url
+> wget $url
 --2020-05-06 02:14:17--  http://www.google.com/
 Resolving www.google.com (www.google.com)... 172.217.31.164
 Connecting to www.google.com (www.google.com)|172.217.31.164|:80... connected.
@@ -40,7 +40,7 @@ index.html                                           [ <=>                      
 
 2020-05-06 02:14:18 (1.80 MB/s) - ‘index.html’ saved [16024]
 
-c
+> c
 success
 end
 ```
