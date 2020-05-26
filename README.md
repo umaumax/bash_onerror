@@ -4,8 +4,6 @@ simple bash debugger
 
 * あるシェルスクリプトでエラーとなった箇所の変数の値を確認しつつ，正しいコマンドを実行してから，処理を再開させることを可能にするスクリプト
   * ただし，スクリプトAからスクリプトBを`source`する形式以外で実行している場合には，そのスクリプトBは`trap`の対象外となることに注意
-* スクリプト名`$0`やファイルの絶対パスを基準とするスクリプトの場合には正しく実行できないことに注意
-  * 存在するファイルに対しては，同一ディレクトリにファイルを生成して実行する形式としたのでディレクトリのみに着目して利用する場合には問題ない
 
 ## how to use
 ```bash
@@ -48,4 +46,15 @@ index.html                                           [ <=>                      
 > c
 success
 end
+```
+
+## FYI
+```
+$ man bash
+       -c        If the -c option is present, then commands are read  from  the  first
+                 non-option argument command_string.  If there are arguments after the
+                 command_string, the first argument is assigned to $0 and any  remain-
+                 ing arguments are assigned to the positional parameters.  The assign-
+                 ment to $0 sets the name of the shell, which is used in  warning  and
+                 error messages.
 ```

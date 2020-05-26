@@ -32,21 +32,12 @@ BASH_ONERROR_onerror_main() {
   shift 1
 
   local script="source $script_path"
-  local tmp_script_filepath
-  # NOTE: /dev/fd/XXX is not file
-  if [[ -f "$target_file" ]]; then
-    tmp_script_filepath="$(dirname $target_file)/.$(basename $target_file).bash_onerror.sh"
-  else
-    local tmpdir=$(mktemp -d "/tmp/$(basename $0).$$.tmp.XXXXXX")
-    tmp_script_filepath="$tmpdir/$(basename $target_file)"
-  fi
-  trap "rm -f '$tmp_script_filepath'" EXIT INT TERM
   # NOTE: first line is maybe 'source xxxx #!/bin/bash' due to match source code line number
-  {
+  # you can set '$0' by using -c option (FYI: see bash manual)
+  bash "${bash_args[@]}" -c "$({
     echo -n "$script "
     cat "$target_file"
-  } >"$tmp_script_filepath"
-  bash "${bash_args[@]}" "$tmp_script_filepath" "$@"
+  })" "$target_file" "$@"
   exit $?
 }
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
