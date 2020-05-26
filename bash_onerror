@@ -9,7 +9,7 @@ BASH_ONERROR_onerror_help() {
 }
 
 BASH_ONERROR_onerror_main() {
-  local script_path="$(cd $(dirname $0) && pwd)/$(basename $0)"
+  local this_script_path="$(cd $(dirname $0) && pwd)/$(basename $0)"
   local default_argn="$#"
   local end_offset=0
   local bash_args=()
@@ -31,11 +31,10 @@ BASH_ONERROR_onerror_main() {
   local target_file="$1"
   shift 1
 
-  local script="source $script_path"
-  # NOTE: first line is maybe 'source xxxx #!/bin/bash' due to match source code line number
+  # NOTE: first line is maybe 'source xxxx #!/bin/bash' due to match original source code line number
   # you can set '$0' by using -c option (FYI: see bash manual)
   bash "${bash_args[@]}" -c "$({
-    echo -n "$script "
+    echo -n "source $this_script_path "
     cat "$target_file"
   })" "$target_file" "$@"
   exit $?
