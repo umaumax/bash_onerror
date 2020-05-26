@@ -7,11 +7,12 @@ BASH_ONERROR_onerror_help() {
   echo "$(basename "$0") <bash file> <args>" 1>&2
   echo "$(basename "$0") [bash options...] -- <bash file> <args>" 1>&2
 }
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  script_path="$(cd $(dirname $0) && pwd)/$(basename $0)"
-  default_argn="$#"
-  end_offset=0
-  bash_args=()
+
+BASH_ONERROR_onerror_main() {
+  local script_path="$(cd $(dirname $0) && pwd)/$(basename $0)"
+  local default_argn="$#"
+  local end_offset=0
+  local bash_args=()
   if [[ ! -e $1 ]]; then
     for arg in "$@"; do
       if [[ $arg == "--" ]]; then
@@ -27,12 +28,12 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     exit 1
   fi
 
-  target_file="$1"
+  local target_file="$1"
   shift 1
 
-  script="source $script_path"
-  tmpdir=$(mktemp -d "/tmp/$(basename $0).$$.tmp.XXXXXX")
-  tmp_script_filepath="$tmpdir/$(basename $target_file)"
+  local script="source $script_path"
+  local tmpdir=$(mktemp -d "/tmp/$(basename $0).$$.tmp.XXXXXX")
+  local tmp_script_filepath="$tmpdir/$(basename $target_file)"
   # NOTE: first line is maybe 'source xxxx #!/bin/bash' due to match source code line number
   {
     echo -n "$script "
@@ -40,6 +41,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   } >"$tmp_script_filepath"
   bash "${bash_args[@]}" "$tmp_script_filepath" "$@"
   exit $?
+}
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  BASH_ONERROR_onerror_main "$@"
 fi
 if [[ -v BASH_ONERROR_BASE_VARIABLE_DATA_FILEPATH ]]; then
   return
