@@ -20,6 +20,8 @@ BASH_ONERROR_source_main() {
     BASH_ONERROR_XTRACE_OPT_FLAG="on"
   fi
 
+  BASH_ONERROR_WORKING_DIRPATH="$PWD"
+
   trap 'BASH_ONERROR_onerror "$LINENO" "$?"' ERR
 }
 
@@ -96,7 +98,7 @@ BASH_ONERROR_onerror() {
     BASH_ONERROR_source="$BASH_SOURCE"
   fi
   if [[ ! "$BASH_ONERROR_source" =~ ^/ ]]; then
-    BASH_ONERROR_source="${DIRSTACK[0]}/$BASH_ONERROR_source"
+    BASH_ONERROR_source="$BASH_ONERROR_WORKING_DIRPATH/$BASH_ONERROR_source"
   fi
 
   local BASH_ONERROR_CONTEXT_NUM=${BASH_ONERROR_CONTEXT_NUM:-5}
