@@ -1,9 +1,27 @@
 #!/usr/bin/env bash
 
-# if set +e is enabled, script will be exited after trapped
-set +e
-# NOTE: enable trap in function
-# set -E
+BASH_ONERROR_source_main() {
+  if [[ -v BASH_ONERROR_BASE_VARIABLE_DATA_FILEPATH ]]; then
+    return
+  fi
+
+  # if set +e is enabled, script will be exited after trapped
+  builtin set +e
+  # NOTE: enable trap in function
+  # builtin set -E
+
+  BASH_ONERROR_BASE_VARIABLE_DATA_FILEPATH="$(mktemp "/tmp/$(basename $0).$$.tmp.XXXXXX")"
+  (
+    builtin set -o posix
+    builtin set
+  ) >"$BASH_ONERROR_BASE_VARIABLE_DATA_FILEPATH"
+
+  if builtin set -o | grep -q 'xtrace.*on'; then
+    BASH_ONERROR_XTRACE_OPT_FLAG="on"
+  fi
+
+  trap 'BASH_ONERROR_onerror "$LINENO" "$?"' ERR
+}
 
 BASH_ONERROR_onerror_help() {
   echo "$(basename "$0") <bash file> <args>" 1>&2
@@ -27,7 +45,7 @@ BASH_ONERROR_onerror_main() {
   fi
   if [[ $# -lt 1 ]] || [[ "$end_offset" == "$default_argn" ]]; then
     BASH_ONERROR_onerror_help
-    exit 1
+    return 1
   fi
 
   local target_file="$1"
@@ -39,23 +57,8 @@ BASH_ONERROR_onerror_main() {
     echo -n "source $this_script_path "
     cat "$target_file"
   })" "$target_file" "$@"
-  exit $?
 }
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  BASH_ONERROR_onerror_main "$@"
-fi
-if [[ -v BASH_ONERROR_BASE_VARIABLE_DATA_FILEPATH ]]; then
-  return
-fi
-BASH_ONERROR_BASE_VARIABLE_DATA_FILEPATH="$(mktemp "/tmp/$(basename $0).$$.tmp.XXXXXX")"
-(
-  set -o posix
-  set
-) >"$BASH_ONERROR_BASE_VARIABLE_DATA_FILEPATH"
 
-if set -o | grep -q 'xtrace.*on'; then
-  BASH_ONERROR_XTRACE_OPT_FLAG="on"
-fi
 BASH_ONERROR_readline() {
   (
     shopt -s expand_aliases
@@ -71,7 +74,7 @@ BASH_ONERROR_readline() {
   )
 }
 BASH_ONERROR_onerror() {
-  set +x
+  builtin set +x
   # NOTE: why +1?
   local BASH_ONERROR_LINENO_="$(($1 + 1))"
   local BASH_ONERROR_status="$2"
@@ -114,8 +117,8 @@ BASH_ONERROR_onerror() {
   echo 1>&2 -e "\\033[92m[new variables]\\033[00m"
   echo 1>&2 -ne "\\033[92m"
   diff -c "$BASH_ONERROR_BASE_VARIABLE_DATA_FILEPATH" <(
-    set -o posix
-    set
+    builtin set -o posix
+    builtin set
   ) | grep '^+' | grep -E -v '^\+ (COLUMNS|LINENO|LINES|FUNCNAME|BASH_ONERROR_|BASH_)'
   echo 1>&2 -ne "\\033[00m"
 
@@ -139,12 +142,10 @@ BASH_ONERROR_onerror() {
 
   [[ -n "$BASH_ONERROR_trap_SIGINT_bk" ]] && eval "$BASH_ONERROR_trap_SIGINT_bk"
   if [[ "$BASH_ONERROR_XTRACE_OPT_FLAG" == "on" ]]; then
-    set -x
+    builtin set -x
   fi
   return 0
 }
-
-trap 'BASH_ONERROR_onerror "$LINENO" "$?"' ERR
 
 # NOTE: force set +e function
 set() {
@@ -153,3 +154,11 @@ set() {
   builtin set +e >/dev/null 2>&1
   return $exit_code
 }
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  BASH_ONERROR_onerror_main "$@"
+  exit $?
+else
+  BASH_ONERROR_source_main "$@"
+  return $?
+fi
