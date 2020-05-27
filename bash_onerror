@@ -143,4 +143,13 @@ BASH_ONERROR_onerror() {
   fi
   return 0
 }
+
 trap 'BASH_ONERROR_onerror "$LINENO" "$?"' ERR
+
+# NOTE: force set +e function
+set() {
+  builtin set "$@"
+  local exit_code=$?
+  builtin set +e >/dev/null 2>&1
+  return $exit_code
+}
