@@ -73,7 +73,7 @@ BASH_ONERROR_readline() {
 BASH_ONERROR_onerror() {
   set +x
   # NOTE: why +1?
-  local BASH_ONERROR_LINENO_="$(($1+1))"
+  local BASH_ONERROR_LINENO_="$(($1 + 1))"
   local BASH_ONERROR_status="$2"
   shift 2
 
