@@ -2,6 +2,8 @@
 
 # if set +e is enabled, script will be exited after trapped
 set +e
+# NOTE: enable trap in function
+# set -E
 
 BASH_ONERROR_onerror_help() {
   echo "$(basename "$0") <bash file> <args>" 1>&2
@@ -70,7 +72,8 @@ BASH_ONERROR_readline() {
 }
 BASH_ONERROR_onerror() {
   set +x
-  local BASH_ONERROR_LINENO_="$1"
+  # NOTE: why +1?
+  local BASH_ONERROR_LINENO_="$(($1+1))"
   local BASH_ONERROR_status="$2"
   shift 2
 
@@ -82,18 +85,38 @@ BASH_ONERROR_onerror() {
     trap 'echo ""' SIGINT
   fi
 
+  local BASH_ONERROR_source
+  # NOTE: BASH_SOURCE[0] is this script filepath
+  if [[ ${#BASH_SOURCE[@]} == 1 ]] || [[ ${#BASH_SOURCE[@]} == 3 && ${BASH_SOURCE[1]} == 'environment' && ${BASH_SOURCE[2]} == 'environment' ]]; then
+    BASH_ONERROR_source="$0"
+  else
+    BASH_ONERROR_source="$BASH_SOURCE"
+  fi
+  if [[ ! "$BASH_ONERROR_source" =~ ^/ ]]; then
+    BASH_ONERROR_source="${DIRSTACK[0]}/$BASH_ONERROR_source"
+  fi
+
+  local BASH_ONERROR_CONTEXT_NUM=${BASH_ONERROR_CONTEXT_NUM:-5}
   printf '\033[90m%*s\033[00m\n' "$(tput cols)" '' | tr ' ' "="
   echo 1>&2 -e "\\033[90m[TRAP ERR]\\033[00m"
+  echo 1>&2 -e "\\033[35m$BASH_ONERROR_source:$BASH_ONERROR_LINENO_\\033[00m"
+  echo 1>&2 -e "\\033[32m[function call stack]: $(echo ${FUNCNAME[@]:1} | rev | sed 's/ /->/g')\\033[00m"
   echo 1>&2 -e "\\033[31m[✘ $BASH_ONERROR_status] $BASH_COMMAND\\033[00m"
-  echo 1>&2 -e "\\033[35m$(basename ${BASH_SOURCE[1]}):$BASH_ONERROR_LINENO_\\033[00m"
-  cat -n "${BASH_SOURCE[1]}" | grep --color=always -C 5 '^ *'"$BASH_ONERROR_LINENO_"'\s.*$'
+  if type >/dev/null 2>&1 'bat'; then
+    local BASH_ONERROR_start_line=$(($BASH_ONERROR_LINENO_ - $BASH_ONERROR_CONTEXT_NUM))
+    local BASH_ONERROR_end_line=$(($BASH_ONERROR_LINENO_ + $BASH_ONERROR_CONTEXT_NUM))
+    BASH_ONERROR_start_line=$(echo -e "0\n$BASH_ONERROR_start_line" | sort -r -g | head -n1)
+    bat --style=plain --pager=never -n --line-range "$BASH_ONERROR_start_line:$BASH_ONERROR_end_line" --highlight-line $BASH_ONERROR_LINENO_ "$BASH_ONERROR_source"
+  else
+    cat -n "$BASH_ONERROR_source" | grep --color=always -C $BASH_ONERROR_CONTEXT_NUM '^ *'"$BASH_ONERROR_LINENO_"'\s.*$'
+  fi
 
   echo 1>&2 -e "\\033[92m[new variables]\\033[00m"
   echo 1>&2 -ne "\\033[92m"
   diff -c "$BASH_ONERROR_BASE_VARIABLE_DATA_FILEPATH" <(
     set -o posix
     set
-  ) | grep '^+' | grep -E -v '^\+ (COLUMNS|LINENO|LINES|FUNCNAME|BASH_ONERROR_)'
+  ) | grep '^+' | grep -E -v '^\+ (COLUMNS|LINENO|LINES|FUNCNAME|BASH_ONERROR_|BASH_)'
   echo 1>&2 -ne "\\033[00m"
 
   echo 1>&2 -e "\\033[93m[prompt command]: <bash command>, q|exit|quit, c|continue\\033[00m"

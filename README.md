@@ -4,8 +4,12 @@ simple bash debugger
 
 * あるシェルスクリプトでエラーとなった箇所の変数の値を確認しつつ，正しいコマンドを実行してから，処理を再開させることを可能にするスクリプト
   * ただし，スクリプトAからスクリプトBを`source`する形式以外で実行している場合には，そのスクリプトBは`trap`の対象外となることに注意
+* `$BASH_SOURCE[0]`が本来のscriptではなく，この`bash_onerror.sh`となるという問題がある
 
 ## how to use
+* `bash_onerror -E -- $script_filepath`
+  * 関数内部のエラーもtrapする
+
 ```bash
 $ ./bash_onerror.sh <(echo '#!/bin/bash\necho start\na=1\nb=2\nc=3\nd=4\nurl=www.google.com\nwgot $url\n[[ -e index.html ]] && echo success\necho end')
 start
@@ -58,3 +62,6 @@ $ man bash
                  ment to $0 sets the name of the shell, which is used in  warning  and
                  error messages.
 ```
+
+* `set -E`をすると，`[environment, environment]`が`${BASH_SOURCE[@]}`に追加される模様
+* `bash -c`で`$0`は明示的に上書きできるが，`${BASH_SOURCE[0]}`は指摘できず空白となる
