@@ -71,7 +71,7 @@ BASH_ONERROR_readline() {
     fi
 
     local ret
-    ret=$(rlwrap bash -c 'read -p "> " -r line; printf '"'"'%s\n'"'"' "$line"')
+    ret=$(rlwrap bash -c 'read -p "'$'\e[36m''> '$'\e[0m''" -r line; printf '"'"'%s\n'"'"' "$line"')
     printf '%s' "$ret"
   )
 }
@@ -138,7 +138,11 @@ BASH_ONERROR_onerror() {
       break
     fi
     if [[ -n "$line" ]]; then
-      eval "$line" || true
+      local exit_code=0
+      eval "$line" || exit_code=$?
+      if [[ $exit_code != 0 ]]; then
+        echo -e "\\033[31m✗ $exit_code\\033[00m"
+      fi
     fi
   done
 
